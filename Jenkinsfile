@@ -30,4 +30,17 @@ pipeline {
             }
         }
     }
+ post {
+        success {
+            mail to: 'ahmed.mostafa.aboalnader@gmail.com',
+                 subject: "The script has been bolled",
+                 body: "The script has been bolled success"
+        }
+        failure {
+            mail to: 'ahmed.mostafa.aboalnader@gmail.com',
+                 subject: "failed ",
+                 body: "The build failed."
+        }
+    }
 }
+
