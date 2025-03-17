@@ -23,13 +23,53 @@
 pipeline {
     agent any
 
+   pipeline {
+    agent any
+
+    environment {
+        REGISTRY = "docker.io/ahmedmosatafa22"
+        FRONTEND_IMAGE = "my-frontend"
+        SERVER_IP = "your-server-ip"
+        SSH_USER = "your-ssh-user"
+    }
+
     stages {
-        stage('Hello') {
+        stage('Clone Repository') {
             steps {
-                echo 'Hello, World!'
+                git branch: 'main', url: 'https://github.com/Ahmedaboalnader/microservises'
+            }
+        }
+
+        stage('Build Frontend Image') {
+            steps {
+                sh 'docker build -t $REGISTRY/$FRONTEND_IMAGE:latest ./frontend'
+            }
+        }
+
+        stage('Push Image to Docker Hub') {
+            steps {
+                sh 'docker login -u ahmedmostafa22 -p Ahmed@1#2$3'
+                sh 'docker push $REGISTRY/$FRONTEND_IMAGE:latest'
+            }
+        }
+
+        stage('Deploy to Server') {
+            steps {
+                sshagent(['projectssh']) {
+                    sh '''
+                    ssh $SSH_USER@$SERVER_IP <<EOF
+                    docker pull $REGISTRY/$FRONTEND_IMAGE:latest
+                    docker stop frontend || true
+                    docker rm frontend || true
+                    docker run -d -p 80:80 --name frontend $REGISTRY/$FRONTEND_IMAGE:latest
+                    EOF
+                    '''
+                }
             }
         }
     }
+}
+
  post {
         success {
             mail to: 'ahmed.mostafa.aboalnader@gmail.com',
