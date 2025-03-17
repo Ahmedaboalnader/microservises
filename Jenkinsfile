@@ -23,12 +23,9 @@
 pipeline {
     agent any
 
-   pipeline {
-    agent any
-
     environment {
-        REGISTRY = "docker.io/ahmedmosatafa22"
-        FRONTEND_IMAGE = "my-frontend"
+        REGISTRY = "docker.io/ahmedmostafa22"
+        IMAGE_NAME = "test"
         SERVER_IP = "your-server-ip"
         SSH_USER = "your-ssh-user"
     }
@@ -36,39 +33,45 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: 'main', url: 'https://github.com/Ahmedaboalnader/microservises'
+                git 'https://github.com/Ahmedaboalnader/microservises.git'
             }
         }
 
-        stage('Build Frontend Image') {
+        stage('Build Docker Image') {
             steps {
-                sh 'docker build -t $REGISTRY/$FRONTEND_IMAGE:latest ./frontend'
+                script {
+                    sh "docker build -t $REGISTRY/$IMAGE_NAME:latest ."
+                }
             }
         }
 
         stage('Push Image to Docker Hub') {
             steps {
-                sh 'docker login -u ahmedmostafa22 -p Ahmed@1#2$3'
-                sh 'docker push $REGISTRY/$FRONTEND_IMAGE:latest'
+                script {
+                    withDockerRegistry([credentialsId: 'dockerid', url: '']) {
+                        sh "docker push $REGISTRY/$IMAGE_NAME:latest"
+                    }
+                }
             }
         }
 
         stage('Deploy to Server') {
             steps {
-                sshagent(['projectssh']) {
-                    sh '''
+                script {
+                    sh """
                     ssh $SSH_USER@$SERVER_IP <<EOF
-                    docker pull $REGISTRY/$FRONTEND_IMAGE:latest
-                    docker stop frontend || true
-                    docker rm frontend || true
-                    docker run -d -p 80:80 --name frontend $REGISTRY/$FRONTEND_IMAGE:latest
+                    docker pull $REGISTRY/$IMAGE_NAME:latest
+                    docker stop my-app || true
+                    docker rm my-app || true
+                    docker run -d --name my-app -p 80:80 $REGISTRY/$IMAGE_NAME:latest
                     EOF
-                    '''
+                    """
                 }
             }
         }
     }
 }
+
 
  post {
         success {
